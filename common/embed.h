@@ -23,6 +23,7 @@
  *   Dave Camp <dcamp@mozilla.com>
  *   Tobias Hunger <tobias.hunger@gmail.com>
  *   Steffen Imhof <steffen.imhof@googlemail.com>
+ *   Sergey Kolosov <kolosov@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -40,6 +41,8 @@
 
 #ifndef MOZEMBED_EMBED_H
 #define MOZEMBED_EMBED_H
+
+#include "geckoembed_config.h"
 
 #include "prtypes.h"
 #include "nsError.h"
@@ -252,7 +255,7 @@ public:
      * @param aFocus true to give fous, false to take it away
      * @return 0 on success
      */
-    nsresult SetFocus(PRBool aFocus);
+    nsresult SetFocus(bool aFocus);
 
     /**
      * Make the browser view visible.

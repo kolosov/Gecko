@@ -21,6 +21,7 @@
  * Contributor(s):
  *   Pelle Johnsen <pjohnsen@mozilla.com>
  *   Dave Camp <dcamp@mozilla.com>
+ *   Sergey Kolosov <kolosov@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -40,7 +41,9 @@
 #define MOZEMBED_EMBEDDINGSETUP_H
 
 #include "nsIDirectoryService.h"
+
 #include "prtypes.h"
+#include "geckoembed_config.h"
 
 #define defXULPath  GECKO_SDK_PATH_CONFIG "/bin/libxpcom.so"
 
