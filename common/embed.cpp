@@ -64,11 +64,10 @@ using namespace std;
 #include "nsIConsoleService.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsIDOMEventTarget.h"
-#include "nsIDOMWindow2.h"
-#include "nsIDOMWindowInternal.h"
+#include "nsIDOMWindow.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
-#include "nsIScriptContext.h"
+
 #include "nsIScriptGlobalObject.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIURI.h"
@@ -81,14 +80,13 @@ using namespace std;
 #include "nsIWidget.h"
 #include "nsIWindowCreator2.h"
 #include "nsIWindowWatcher.h"
-#include "nsIXPConnect.h"
 
 // globals
 static nsCOMPtr<WindowCreator> sWindowCreator;
 
-MozApp::MozApp(const char* aProfilePath, const char* aEmbedPath)
+MozApp::MozApp(const char* aProfilePath)
 {
-    nsresult rv = InitEmbedding(aProfilePath, aEmbedPath);
+    nsresult rv = InitEmbedding(aProfilePath);
     if (NS_FAILED(rv)) {
         NS_RUNTIMEABORT("Embedding initialization failed!");
     }
@@ -104,17 +102,17 @@ nsresult MozApp::SetCharPref(const char *aName, const char *aValue)
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->SetCharPref(aName, aValue);
 }
 
-nsresult MozApp::SetBoolPref(const char *aName, PRBool aValue)
+nsresult MozApp::SetBoolPref(const char *aName, bool aValue)
 {
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->SetBoolPref(aName, aValue);
 }
@@ -124,7 +122,7 @@ nsresult MozApp::SetIntPref(const char *aName, int aValue)
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->SetIntPref(aName, aValue);
 }
@@ -134,17 +132,17 @@ nsresult MozApp::GetCharPref(const char *aName, char **aValue)
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->GetCharPref(aName, aValue);
 }
 
-nsresult MozApp::GetBoolPref(const char *aName, PRBool *aValue)
+nsresult MozApp::GetBoolPref(const char *aName, bool *aValue)
 {
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->GetBoolPref(aName, aValue);
 }
@@ -154,7 +152,7 @@ nsresult MozApp::GetIntPref(const char *aName, int *aValue)
     nsresult rv;
 
     nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return pref->GetIntPref(aName, aValue);
 }
@@ -181,7 +179,7 @@ public:
         nsCOMPtr<nsIWeakReference> thisListener(do_GetWeakReference(listener));
         if (mWebBrowser)
             mWebBrowser->RemoveWebBrowserListener(thisListener, NS_GET_IID(nsIWebProgressListener));
-        thisListener = nsnull;
+        thisListener = NULL;
 
         if (mChrome)
             mChrome->SetWebBrowser(0);
@@ -196,7 +194,7 @@ public:
 
         mContentListener = 0;
         mDOMEventListener = 0;
-        mConsoleListener->Detach();
+        if (mConsoleListener) mConsoleListener->Detach();
         mConsoleListener = 0;
         mWebNavigation = 0;
         mDOMWindow = 0;
@@ -213,7 +211,7 @@ public:
     MozView* mParentView;
 
     nsCOMPtr<nsIWebBrowser> mWebBrowser;
-    nsCOMPtr<nsIDOMWindow2> mDOMWindow;
+    nsCOMPtr<nsIDOMWindow> mDOMWindow;
     nsCOMPtr<nsIWebNavigation> mWebNavigation;
     nsCOMPtr<nsIWebBrowserChrome> mChrome;
     nsCOMPtr<nsIURIContentListener> mContentListener;
@@ -237,7 +235,7 @@ public:
     NS_DECL_NSIWINDOWCREATOR2
 };
 
-NS_IMPL_ISUPPORTS2(WindowCreator, nsIWindowCreator, nsIWindowCreator2)
+NS_IMPL_ISUPPORTS(WindowCreator, nsIWindowCreator, nsIWindowCreator2)
 
 NS_IMETHODIMP
 WindowCreator::CreateChromeWindow(nsIWebBrowserChrome *aParent,
@@ -265,17 +263,20 @@ WindowCreator::CreateChromeWindow(nsIWebBrowserChrome *aParent,
 
 NS_IMETHODIMP
 WindowCreator::CreateChromeWindow2(nsIWebBrowserChrome *aParent,
-                                   PRUint32 aChromeFlags,
-                                   PRUint32 /*aContextFlags*/,
-                                   nsIURI * /*aUri*/, PRBool * /*aCancel*/,
-                                   nsIWebBrowserChrome **_retval)
+								uint32_t aChromeFlags,
+								uint32_t /*aContextFlags*/,
+                                nsIURI * /*aUri*/,
+                                nsITabParent *aOpeningTab,
+                                bool * /*aCancel*/,
+                                nsIWebBrowserChrome **_retval)
 {
     return CreateChromeWindow(aParent, aChromeFlags, _retval);
 }
 
-MozView::MozView()
+MozView::MozView(const char* aProfilePath)
 {
-    nsresult rv = InitEmbedding();
+    //nsresult rv = InitEmbedding(0,xulPath);
+	nsresult rv = InitEmbedding(aProfilePath);
     if (NS_FAILED(rv)) {
         NS_RUNTIMEABORT("Embedding initialization failed!");
     }
@@ -297,6 +298,7 @@ MozView::MozView()
         return;// NS_ERROR_UNEXPECTED;
 
     wwatch->SetWindowCreator(sWindowCreator);
+    return;
 }
 
 MozView::~MozView()
@@ -306,7 +308,7 @@ MozView::~MozView()
     TermEmbedding();
 }
 
-nsresult MozView::CreateBrowser(void* aParentWindow,
+int MozView::CreateBrowser(void* aParentWindow,
                                 PRInt32 aX, PRInt32 aY,
                                 PRInt32 aWidth, PRInt32 aHeight,
                                 PRUint32 aChromeFlags)
@@ -316,15 +318,22 @@ nsresult MozView::CreateBrowser(void* aParentWindow,
     nsresult rv;
 
     mPrivate->mWebBrowser = do_CreateInstance(NS_WEBBROWSER_CONTRACTID, &rv);
-    if (NS_FAILED(rv))
-        cerr << "do_CreateInstance webBrowser." << endl;
-
+    if (NS_FAILED(rv)) {
+        cerr << "do_CreateInstance webBrowser failed" << endl;
+        return -1;
+    }
     nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(mPrivate->mWebBrowser);
-    if (NS_FAILED(baseWindow->InitWindow(mPrivate->mParentWindow, 0, aX, aY, aWidth, aHeight)))
-        cerr << "InitWindow failed." << endl;
-
+    if (NS_FAILED(baseWindow->InitWindow(mPrivate->mParentWindow, 0, aX, aY, aWidth, aHeight))){
+        cerr << "InitWindow failed" << endl;
+        return -1;
+    }
     nsIWebBrowserChrome **aNewWindow = getter_AddRefs(mPrivate->mChrome);
-    CallQueryInterface(static_cast<nsIWebBrowserChrome*>(new WebBrowserChrome(this)), aNewWindow);
+
+
+    WebBrowserChrome *aWebBrowserChrome = new WebBrowserChrome(this);
+
+    static_cast<nsIWebBrowserChrome*>(aWebBrowserChrome);
+    CallQueryInterface(aWebBrowserChrome, aNewWindow);
 
     mPrivate->mWebBrowser->SetContainerWindow(mPrivate->mChrome);
     mPrivate->mChrome->SetWebBrowser(mPrivate->mWebBrowser);
@@ -376,7 +385,7 @@ nsresult MozView::CreateBrowser(void* aParentWindow,
         cerr << "Failed to register console listener." << endl;
     SetFocus(true);
 
-    return NS_OK;
+    return 0;
 }
 
 nsresult MozView::SetPositionAndSize(PRInt32 aX, PRInt32 aY,
@@ -388,9 +397,12 @@ nsresult MozView::SetPositionAndSize(PRInt32 aX, PRInt32 aY,
 
 nsresult MozView::LoadURI(const char *aUri)
 {
-    return mPrivate->mWebNavigation->LoadURI(NS_ConvertUTF8toUTF16(aUri).get(),
+	nsresult res;
+	cout << "LoadURI: " << aUri << endl;
+	res = mPrivate->mWebNavigation->LoadURI(NS_ConvertUTF8toUTF16(aUri).get(),
                                              nsIWebNavigation::LOAD_FLAGS_NONE,
                                              0, 0, 0);
+	return res;
 }
 
 nsresult MozView::LoadData(const char *aBaseUrl,
@@ -406,16 +418,16 @@ nsresult MozView::LoadData(const char *aBaseUrl,
 
     nsCOMPtr<nsIURI> uri;
     rv = NS_NewURI(getter_AddRefs(uri), aBaseUrl);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     rv = wbStream->OpenStream(uri, nsDependentCString(aContentType));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     rv = wbStream->AppendToStream(aData, aLen);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     rv = wbStream->CloseStream();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     return NS_OK;
 }
@@ -440,21 +452,21 @@ nsresult MozView::GoForward()
     return mPrivate->mWebNavigation->GoForward();
 }
 
-PRBool MozView::CanGoBack()
+bool MozView::CanGoBack()
 {
-    PRBool allowBack;
+    bool allowBack;
     mPrivate->mWebNavigation->GetCanGoBack(&allowBack);
     return allowBack;
 }
 
-PRBool MozView::CanGoForward()
+bool MozView::CanGoForward()
 {
-    PRBool allowForward;
+    bool allowForward;
     mPrivate->mWebNavigation->GetCanGoForward(&allowForward);
     return allowForward;
 }
 
-nsresult MozView::SetFocus(PRBool aFocus)
+nsresult MozView::SetFocus(bool aFocus)
 {
     nsCOMPtr<nsIWebBrowserFocus> browserFocus;
     browserFocus = do_QueryInterface(mPrivate->mWebBrowser);
@@ -532,7 +544,7 @@ void * MozView::GetBrowser()
     return mPrivate->mWebBrowser;
 }
 
-nsIDOMWindow2 * MozView::GetDOMWindow()
+nsIDOMWindow * MozView::GetDOMWindow()
 {
     return mPrivate->mDOMWindow;
 }
@@ -542,24 +554,29 @@ nsIWebNavigation * MozView::GetNavigation()
     return mPrivate->mWebNavigation;
 }
 
-bool MozView::FindText(const PRUnichar * aSubString,
+bool MozView::FindText(const char * aSubString,
                        bool aCaseSensitive, bool aWrap,
                        bool aEntireWord, bool aBackwards)
 {
-    nsAutoString str(aSubString);
-    PRBool result;
-    nsCOMPtr<nsIDOMWindowInternal> dom_window_internal =
-            do_QueryInterface(mPrivate->mDOMWindow);
-    dom_window_internal->Find(str,
-                              aCaseSensitive ? PR_TRUE : PR_FALSE,
-                              aBackwards ? PR_TRUE : PR_FALSE,
-                              aWrap ? PR_TRUE : PR_FALSE,
-                              aEntireWord ? PR_TRUE : PR_FALSE,
-                              PR_TRUE, PR_FALSE, &result);
+    nsString aStr;
+
+    aStr.AssignASCII(aSubString);
+
+    bool result;
+	nsCOMPtr<nsIDOMWindow> dom_window_internal = do_QueryInterface(mPrivate->mDOMWindow);
+
+    dom_window_internal->Find(aStr,
+                              aCaseSensitive,
+                              aBackwards,
+                              aWrap,
+                              aEntireWord,
+                              true, false, &result);
+
     return result;
 }
 
 // XXX using c++ new as an allocator is generally BAD
+/*
 char* MozView::EvaluateJavaScript(const char* aScript)
 {
     nsCOMPtr<nsIScriptGlobalObject> sgo =
@@ -567,20 +584,7 @@ char* MozView::EvaluateJavaScript(const char* aScript)
     nsCOMPtr<nsIScriptContext> ctx = sgo->GetContext();
     nsString retval;
     nsCOMPtr<nsIScriptObjectPrincipal> sgoPrincipal = do_QueryInterface(sgo);
-    nsresult rv;
-    JSObject * jsobj = sgo->GetGlobalJSObject();
-    nsCOMPtr<nsIXPConnect> xpconnect = do_GetService(nsIXPConnect::GetCID(), &rv);
-    if (NS_SUCCEEDED(rv))
-    {
-        JSContext * jsctx = static_cast<JSContext*>(ctx->GetNativeContext());
-        JSObject * jsunwrapped;
-        rv = xpconnect->GetJSObjectOfWrapper(jsctx, jsobj, &jsunwrapped);
-        if (NS_SUCCEEDED(rv))
-        {
-            jsobj = jsunwrapped;
-        }
-    }
-    ctx->EvaluateString(NS_ConvertUTF8toUTF16(aScript), jsobj,
+    ctx->EvaluateString(NS_ConvertUTF8toUTF16(aScript), sgo->GetGlobalJSObject(),
                         sgoPrincipal->GetPrincipal(),
                         "mozembed", 0, nsnull, &retval, nsnull);
 
@@ -591,7 +595,7 @@ char* MozView::EvaluateJavaScript(const char* aScript)
 
     return temp;
 }
-
+*/
 // ---- MozViewListener ---
 MozViewListener::MozViewListener() : mMozView(0)
 {
@@ -610,16 +614,29 @@ void MozViewListener::StatusChanged(const char * /*aNewStatus*/,
 {
 }
 
+void MozViewListener::ProgressChanged(PRUint32 /*aProgress*/)
+{
+}
+
 void MozViewListener::LocationChanged(const char * /*aNewLocation*/)
 {
 }
 
-PRBool MozViewListener::OpenURI(const char* /*aNewLocation*/)
+bool MozViewListener::OpenURI(const char* /*aNewLocation*/)
 {
-    return PR_FALSE;
+    return false;
 }
 
-void MozViewListener::DocumentLoaded()
+void MozViewListener::DocumentLoadStarted()
+{
+}
+
+void MozViewListener::DocumentLoaded(bool /*aSuccess*/)
+{
+}
+
+
+void MozViewListener::FrameLoaded()
 {
 }
 
@@ -637,7 +654,11 @@ void MozViewListener::SizeTo(PRUint32 /*aWidth*/, PRUint32 /*aHeight*/)
 {
 }
 
-void MozViewListener::SetVisibility(PRBool /*aVisible*/)
+void MozViewListener::MoveTo(PRInt32 /*aX*/, PRInt32 /*aY*/)
+{
+}
+
+void MozViewListener::SetVisibility(bool /*aVisible*/)
 {
 }
 
@@ -653,7 +674,7 @@ void MozViewListener::OnConsoleMessage(const char * /*aMessage*/)
 {
 }
 
-void MozViewListener::OnFocusChanged(PRBool /*aForward*/)
+void MozViewListener::OnFocusChanged(bool /*aForward*/)
 {
 }
 

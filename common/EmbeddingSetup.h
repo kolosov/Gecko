@@ -42,7 +42,9 @@
 #include "nsIDirectoryService.h"
 #include "prtypes.h"
 
-typedef PRUint32 nsresult;
+#define defXULPath  GECKO_SDK_PATH_CONFIG "/bin/libxpcom.so"
+
+//typedef PRUint32 nsresult;
 
 /**
  * Initializes embedding, i.e. loads needed libs do other needed setup.
@@ -57,8 +59,7 @@ typedef PRUint32 nsresult;
  * @param aEmbedPath Optional path to the actual xulrunner code,
  *  to use a specific version rather than any registered version.
  */
-nsresult InitEmbedding(const char* aProfilePath = 0,
-                       const char* aEmbedPath = 0);
+nsresult InitEmbedding(const char* aProfilePath = 0, const char* XULPath = defXULPath);
 
 /**
  * Terminates embedding, i.e. does teardown and unloads needed libs.

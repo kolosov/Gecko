@@ -42,14 +42,12 @@
 #define MOZEMBED_EMBED_H
 
 #include "prtypes.h"
+#include "nsError.h"
 
-typedef PRUint32 nsresult;
 
 class MozViewListener;
 class WindowCreator;
-
-class nsIDOMWindow2;
-class nsIDOMWindowInternal;
+class nsIDOMWindow;
 class nsIInterfaceRequestor;
 class nsIWebNavigation;
 
@@ -71,7 +69,7 @@ public:
      *  @param aEmbedPath is an optional path to the xpcom.dll
      *  and is used when we are embedded.
      */
-    MozApp(const char* aProfilePath = 0, const char* aEmbedPath = 0);
+    MozApp(const char* aProfilePath = 0);
 
     /**
      * Destructor.
@@ -94,7 +92,7 @@ public:
      * @param aValue the new value to be set
      * @return 0 on success
      */
-    nsresult SetBoolPref(const char *aName, PRBool aValue);
+    nsresult SetBoolPref(const char *aName, bool aValue);
 
     /**
      * Set an integer preference.
@@ -123,7 +121,7 @@ public:
      * @param aValue the result is stored here.
      * @return 0 on success
      */
-    nsresult GetBoolPref(const char *aName, PRBool *aValue);
+    nsresult GetBoolPref(const char *aName, bool *aValue);
 
     /**
      * Get an integer preference.
@@ -149,7 +147,7 @@ public:
     /**
      * Constructor.
      */
-    MozView();
+	MozView(const char* aProfilePath = 0);
 
     /**
      * Destructor.
@@ -168,7 +166,7 @@ public:
      *  MozViewListener::OpenWindow
      * @return 0 on success
      */
-    nsresult CreateBrowser(void* aNativeWindow, PRInt32 aX, PRInt32 aY,
+    int CreateBrowser(void* aNativeWindow, PRInt32 aX, PRInt32 aY,
         PRInt32 aWidth, PRInt32 aHeight, PRUint32 aChromeFlags = 0);
 
     /**
@@ -239,14 +237,14 @@ public:
      *
      * @return true if the browser can go back, false if not
      */
-    PRBool CanGoBack();
+    bool CanGoBack();
 
     /**
      * Indicates if the browser can go forward.
      *
      * @return true if the browser can go forward, false if not
      */
-    PRBool CanGoForward();
+    bool CanGoForward();
 
     /**
      * Change focus for the browser view.
@@ -335,7 +333,7 @@ public:
      *
      * @return A pointer to the DOMWindow interface.
      */
-    nsIDOMWindow2 * GetDOMWindow();
+    nsIDOMWindow * GetDOMWindow();
 
     /**
      * Convenience method to get the nsIWebNavigation.
@@ -355,7 +353,7 @@ public:
      * @param aBackwards Should we search backwards (default: no)?
      * @return true if the text was found and false otherwise.
      */
-    bool FindText(const PRUnichar * aSubString,
+    bool FindText(const char * aSubString,
                   bool aCaseSensitive = false, bool aWrap = false,
                   bool aEntireWord = false, bool aBackwards = false);
 
@@ -423,6 +421,13 @@ public:
     virtual void StatusChanged(const char* aNewStatus, PRUint32 aStatusType);
 
     /**
+     * Informs the application to change it's status message
+     *
+     * @param aPercentage percentage loaded.
+     */
+    virtual void ProgressChanged(PRUint32 aPercentage);
+
+    /**
      * Informs the application that the location of the browser
      * has changed.
      *
@@ -437,13 +442,20 @@ public:
      * @param aNewLocation the requested uri
      * @return true to abort the load, false to allow it.
      */
-    virtual PRBool OpenURI(const char* aNewLocation);
+    virtual bool OpenURI(const char* aNewLocation);
+    virtual void DocumentLoadStarted();
 
     /**
      * Informs the application that the document has completed
      * loading.
      */
-    virtual void DocumentLoaded();
+    virtual void DocumentLoaded(bool aSuccess);
+
+    /**
+     * Informs the application, that a frame has completed
+     * loading.
+     */
+    virtual void FrameLoaded();
 
     /**
      * Called when the browser needs to open a new window.
@@ -472,11 +484,20 @@ public:
     virtual void SizeTo(PRUint32 aWidth, PRUint32 aHeight);
 
     /**
+     * Ask to change the position of the browser, and therefore the
+     * enclosing window.
+     *
+     * @param aX in pixels
+     * @param aY in pixels
+     */
+    virtual void MoveTo(PRInt32 aX, PRInt32 aY);
+
+    /**
      * Ask to set the visibility of the brower window.
      *
      * @param aVisible true to show, false to hide
      */
-    virtual void SetVisibility(PRBool aVisible);
+    virtual void SetVisibility(bool aVisible);
 
     /**
      * Make the corresponding window behave as modal.
@@ -503,7 +524,7 @@ public:
      * @param    aForward if PR_TRUE, the next sibling shall be focused (Tab), otherwise the
      *                    previous sibling is to be focused (Shift-Tab)
      */
-    virtual void OnFocusChanged(PRBool aForward);
+    virtual void OnFocusChanged(bool aForward);
     
     /**
      * Inform the application about a Close Window request

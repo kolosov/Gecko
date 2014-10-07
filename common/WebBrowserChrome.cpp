@@ -45,6 +45,10 @@
 #include "nsIURI.h"
 #include "nsIWebProgress.h"
 
+// CRT headers
+#include <iostream>
+#include <string>
+using namespace std;
 WebBrowserChrome::WebBrowserChrome(MozView* pAMozView) :
     mChromeFlags(0),
     mSizeSet(PR_FALSE),
@@ -59,7 +63,7 @@ WebBrowserChrome::~WebBrowserChrome()
     /* destructor code */
 }
 
-NS_IMPL_ISUPPORTS6(WebBrowserChrome,
+NS_IMPL_ISUPPORTS(WebBrowserChrome,
                    nsIWebBrowserChrome,
                    nsIWebBrowserChromeFocus,
                    nsIInterfaceRequestor,
@@ -82,7 +86,7 @@ NS_IMETHODIMP WebBrowserChrome::GetInterface(const nsIID &aIID, void** aInstance
     return QueryInterface(aIID, aInstancePtr);
 }
 
-NS_IMETHODIMP WebBrowserChrome::SetStatus(PRUint32 statusType, const PRUnichar *status)
+NS_IMETHODIMP WebBrowserChrome::SetStatus(uint32_t statusType, const char16_t *status)
 {
     MozViewListener* pListener = pMozView->GetListener();
     if (!pListener)
@@ -158,7 +162,7 @@ NS_IMETHODIMP WebBrowserChrome::ShowAsModal()
     return NS_OK;
 }
 
-NS_IMETHODIMP WebBrowserChrome::IsWindowModal(PRBool *_retval)
+NS_IMETHODIMP WebBrowserChrome::IsWindowModal(bool *_retval)
 {
     NS_ENSURE_ARG_POINTER(_retval);
     *_retval = mIsModal;
@@ -178,36 +182,43 @@ NS_IMETHODIMP WebBrowserChrome::ExitModalEventLoop(nsresult aStatus)
 
 // ----- Progress Listener -----
 
-NS_IMETHODIMP WebBrowserChrome::OnStateChange(nsIWebProgress * aWebProgress,
+NS_IMETHODIMP WebBrowserChrome::OnStateChange(nsIWebProgress * /*aWebProgress*/,
                                               nsIRequest * /*aRequest*/,
-                                              PRUint32 aStateFlags,
-                                              nsresult /*aStatus*/)
+                                              uint32_t aStateFlags,
+                                              nsresult aStatus)
 {
     MozViewListener* pListener = pMozView->GetListener();
     // XXX no one considered this case
     if (!pListener)
         return NS_OK;
 
-    if ((aStateFlags & STATE_STOP) && (aStateFlags & STATE_IS_DOCUMENT)) {
+    // whenever any window finished loading, tell the listener about this frame
+    if ((aStateFlags & STATE_STOP) && (aStateFlags & STATE_IS_WINDOW))
+        pListener->FrameLoaded();
+
+    // instead of listening for STATE_IS_DOCUMENT, we use STATE_IS_WINDOW because it seems to come later on,
+    // which is better for triggering the render process, STATE_IS_NETWORK is used to filter out child frames
+    if ((aStateFlags & STATE_STOP) &&
+        ((aStateFlags & (STATE_IS_WINDOW|STATE_IS_NETWORK)) == (STATE_IS_WINDOW|STATE_IS_NETWORK))) {
         // if it was a chrome window and no one has already specified a size,
         // size to content
-        nsCOMPtr<nsIDOMWindow> contentWin;
-        mWebBrowser->GetContentDOMWindow(getter_AddRefs(contentWin));
         if (!mSizeSet && (mChromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME)) {
+            nsCOMPtr<nsIDOMWindow> contentWin;
+            mWebBrowser->GetContentDOMWindow(getter_AddRefs(contentWin));
             if (contentWin)
                 contentWin->SizeToContent();
             SetVisibility(PR_TRUE);
         }
 
-        // XXXbz the fact that nsWebBrowser won't hand out its root web
-        // progress is ridiculous.
-        nsCOMPtr<nsIDOMWindow> progressWindow;
-        aWebProgress->GetDOMWindow(getter_AddRefs(progressWindow));
-        
-        // Make sure the current window is the main content window
-        if (SameCOMIdentity(progressWindow, contentWin))
-          pListener->DocumentLoaded();
+ //       pListener->AttachAdditionalListeners();
+        pListener->DocumentLoaded(aStatus == NS_OK);
     }
+    if ((aStateFlags & STATE_START) &&
+        ((aStateFlags & (STATE_IS_WINDOW|STATE_IS_NETWORK)) == (STATE_IS_WINDOW|STATE_IS_NETWORK)) )
+        // whenever a window is "started" that is not a subframe (STATE_IS_NETWORK), notify the listener
+        pListener->DocumentLoadStarted();
+    
+    //cout << "OnStateChange 2" << endl;
 
     return NS_OK;
 }
@@ -216,32 +227,61 @@ NS_IMETHODIMP WebBrowserChrome::OnProgressChange(nsIWebProgress * /*aWebProgress
                                                  nsIRequest * /*aRequest*/,
                                                  PRInt32 /*aCurSelfProgress*/,
                                                  PRInt32 /*aMaxSelfProgress*/,
-                                                 PRInt32 /*aCurTotalProgress*/,
-                                                 PRInt32 /*aMaxTotalProgress*/)
+                                                 PRInt32 aCurTotalProgress,
+                                                 PRInt32 aMaxTotalProgress)
 {
-    return NS_ERROR_NOT_IMPLEMENTED;
+    MozViewListener* pListener = pMozView->GetListener();
+    if (!pListener)
+        return NS_ERROR_NOT_IMPLEMENTED;
+
+    if(aMaxTotalProgress == 0) aMaxTotalProgress = 100;
+    PRUint32 percentage = ( 100 * aCurTotalProgress ) / aMaxTotalProgress;
+    if (percentage > 100)
+        percentage = 100;
+    pListener->ProgressChanged(percentage);
+    //cout << "OnProgressChange " << percentage << "percent" << endl;
+    return NS_OK;
 }
 
-NS_IMETHODIMP WebBrowserChrome::OnLocationChange(nsIWebProgress * /*aWebProgress*/,
-                                                 nsIRequest * /*aRequest*/,
-                                                 nsIURI *aLocation)
+NS_IMETHODIMP WebBrowserChrome::OnLocationChange(nsIWebProgress * aWebProgress,
+                                                 nsIRequest * ,
+                                                 nsIURI *aLocation, unsigned int)
 {
+    NS_ENSURE_ARG_POINTER(aWebProgress);
     NS_ENSURE_ARG_POINTER(aLocation);
 
     MozViewListener* pListener = pMozView->GetListener();
     if (!pListener)
         return NS_ERROR_NOT_IMPLEMENTED;
 
-    nsCString spec;
-    aLocation->GetSpec(spec);
-    pListener->LocationChanged(spec.get());
+    nsCOMPtr<nsIDOMWindow> domWindow;
+    nsCOMPtr<nsIDOMWindow> topWindow;
+
+    aWebProgress->GetDOMWindow(getter_AddRefs(domWindow));
+
+    if (domWindow)
+        domWindow->GetTop(getter_AddRefs(topWindow));
+
+    // notify location changes only for top window
+    if (domWindow == topWindow)
+    {
+        nsCString spec;
+        aLocation->GetSpec(spec);
+        pListener->LocationChanged(spec.get());
+    }
+
     return NS_OK;
+}
+
+NS_IMETHODIMP WebBrowserChrome::Blur()
+{
+	return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP WebBrowserChrome::OnStatusChange(nsIWebProgress * /*aWebProgress*/,
                                                nsIRequest * /*aRequest*/,
                                                nsresult /*aStatus*/,
-                                               const PRUnichar * /*aMessage*/)
+                                               const char16_t * /*aMessage*/)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -255,8 +295,8 @@ NS_IMETHODIMP WebBrowserChrome::OnSecurityChange(nsIWebProgress * /*aWebProgress
 
 // ----- Embedding Site Window
 
-NS_IMETHODIMP WebBrowserChrome::SetDimensions(PRUint32 /*aFlags*/,
-                                              PRInt32 /*aX*/, PRInt32 /*aY*/,
+NS_IMETHODIMP WebBrowserChrome::SetDimensions(PRUint32 aFlags,
+                                              PRInt32 aX, PRInt32 aY,
                                               PRInt32 aCx, PRInt32 aCy)
 {
     // TODO: currently only does size
@@ -264,8 +304,17 @@ NS_IMETHODIMP WebBrowserChrome::SetDimensions(PRUint32 /*aFlags*/,
     if (!pListener)
         return NS_ERROR_NOT_IMPLEMENTED;
 
-    pListener->SizeTo(aCx, aCy);
-    mSizeSet = PR_TRUE;
+    // TODO: currently only does one size (no difference between outer and inner)
+    if ((aFlags & DIM_FLAGS_SIZE_INNER) ||
+         (aFlags & DIM_FLAGS_SIZE_OUTER))
+    {
+        pListener->SizeTo(aCx, aCy);
+        mSizeSet = PR_TRUE;
+    }
+
+    if (aFlags & DIM_FLAGS_POSITION)
+        pListener->MoveTo(aX,aY);
+
     return NS_OK;
 }
 
@@ -281,14 +330,14 @@ NS_IMETHODIMP WebBrowserChrome::SetFocus()
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP WebBrowserChrome::GetVisibility(PRBool * aVisibility)
+NS_IMETHODIMP WebBrowserChrome::GetVisibility(bool *aVisibility)
 {
-    NS_ENSURE_ARG_POINTER(aVisibility);
-    *aVisibility = PR_TRUE;
-    return NS_OK;
+      NS_ENSURE_ARG_POINTER(aVisibility);
+     *aVisibility = true;
+     return NS_OK;
 }
 
-NS_IMETHODIMP WebBrowserChrome::SetVisibility(PRBool aVisibility)
+NS_IMETHODIMP WebBrowserChrome::SetVisibility(bool aVisibility)
 {
     MozViewListener* pListener = pMozView->GetListener();
     if (!pListener)
@@ -298,12 +347,12 @@ NS_IMETHODIMP WebBrowserChrome::SetVisibility(PRBool aVisibility)
     return NS_OK;
 }
 
-NS_IMETHODIMP WebBrowserChrome::GetTitle(PRUnichar ** /*aTitle*/)
+NS_IMETHODIMP WebBrowserChrome::GetTitle(char16_t ** /*aTitle*/)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP WebBrowserChrome::SetTitle(const PRUnichar *aTitle)
+NS_IMETHODIMP WebBrowserChrome::SetTitle(const char16_t *aTitle)
 {
     MozViewListener* pListener = pMozView->GetListener();
     if (!pListener)

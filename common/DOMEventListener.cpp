@@ -37,7 +37,7 @@
 
 #include "nsIDOMEvent.h"
 
-NS_IMPL_ISUPPORTS1(DOMEventListener,
+NS_IMPL_ISUPPORTS(DOMEventListener,
                    nsIDOMEventListener)
 
 DOMEventListener::DOMEventListener(MozView *aOwner)

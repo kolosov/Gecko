@@ -41,7 +41,7 @@
 
 #include "embed.h"
 
-NS_IMPL_ISUPPORTS1(ConsoleListener,
+NS_IMPL_ISUPPORTS(ConsoleListener,
                    nsIConsoleListener)
 
 ConsoleListener::ConsoleListener(MozView *aOwner) :

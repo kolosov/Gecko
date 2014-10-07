@@ -39,6 +39,7 @@
 
 #include "nsIConsoleListener.h"
 #include "nsWeakReference.h"
+#include "nsIConsoleMessage.h"
 
 class MozView;
 

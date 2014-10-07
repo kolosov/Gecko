@@ -54,6 +54,7 @@ using namespace std;
 #include "nsProfileDirServiceProvider.h"
 
 #include "nsILocalFile.h"
+#include <nsXPCOMGlue.h> 
 
 #ifdef WIN32
   //TODO: make this file fully X platform
@@ -79,7 +80,7 @@ static int gInitCount = 0;
 // ------------------------------------------------------------------------
 
 nsIDirectoryServiceProvider *sAppFileLocProvider = 0;
-nsCOMPtr<nsILocalFile> sProfileDir = 0;
+nsCOMPtr<nsIFile> sProfileDir = 0;
 nsISupports * sProfileLock = 0;
 
 class MozEmbedDirectoryProvider : public nsIDirectoryServiceProvider2
@@ -90,26 +91,26 @@ public:
     NS_DECL_NSIDIRECTORYSERVICEPROVIDER2
 };
 
-static const MozEmbedDirectoryProvider kDirectoryProvider;
+static const MozEmbedDirectoryProvider kDirectoryProvider = MozEmbedDirectoryProvider();
 
-NS_IMPL_QUERY_INTERFACE2(MozEmbedDirectoryProvider,
+NS_IMPL_QUERY_INTERFACE(MozEmbedDirectoryProvider,
                          nsIDirectoryServiceProvider,
                          nsIDirectoryServiceProvider2)
 
-NS_IMETHODIMP_(nsrefcnt)
+NS_IMETHODIMP_(MozExternalRefCountType)
 MozEmbedDirectoryProvider::AddRef()
 {
     return 1;
 }
 
-NS_IMETHODIMP_(nsrefcnt)
+NS_IMETHODIMP_(MozExternalRefCountType)
 MozEmbedDirectoryProvider::Release()
 {
     return 1;
 }
 
 NS_IMETHODIMP
-MozEmbedDirectoryProvider::GetFile(const char *aKey, PRBool *aPersist,
+MozEmbedDirectoryProvider::GetFile(const char *aKey, bool *aPersist,
                                    nsIFile* *aResult)
 {
     if (sAppFileLocProvider) {
@@ -119,17 +120,17 @@ MozEmbedDirectoryProvider::GetFile(const char *aKey, PRBool *aPersist,
     }
 
     if (sProfileDir && !strcmp(aKey, NS_APP_USER_PROFILE_50_DIR)) {
-        *aPersist = PR_TRUE;
+        *aPersist = true;
         return sProfileDir->Clone(aResult);
     }
 
     if (sProfileDir && !strcmp(aKey, NS_APP_PROFILE_DIR_STARTUP)) {
-        *aPersist = PR_TRUE;
+        *aPersist = true;
         return sProfileDir->Clone(aResult);
     }
 
     if (sProfileDir && !strcmp(aKey, NS_APP_CACHE_PARENT_DIR)) {
-        *aPersist = PR_TRUE;
+        *aPersist = true;
         return sProfileDir->Clone(aResult);
     }
 
@@ -149,7 +150,7 @@ MozEmbedDirectoryProvider::GetFiles(const char *aKey,
     return dp2->GetFiles(aKey, aResult);
 }
 
-nsresult InitEmbedding(const char* aProfilePath, const char* aEmbedPath)
+nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
 {
     nsresult rv;
 
@@ -159,29 +160,25 @@ nsresult InitEmbedding(const char* aProfilePath, const char* aEmbedPath)
 
     // Find the GRE (xul shared lib). We are only using frozen interfaces, so we
     // should be compatible all the way up to (but not including) mozilla 2.0
-    static const GREVersionRange vr = {
-        "1.9a1",
-        PR_TRUE,
-        "2.0",
-        PR_FALSE
-    };
+    //static const GREVersionRange vr = {
+    //    "1.9",
+    //    PR_TRUE,
+    //    "7.0",
+    //    PR_FALSE
+    //};
     // find xpcom shared lib (uses GRE_HOME env var if set)
-    char temp[MAX_PATH];
-    rv = GRE_GetGREPathWithProperties(&vr, 1, nsnull, 0, temp, sizeof(temp));
-    string xpcomPath(temp);
+
+//	rv = GRE_GetGREPathWithProperties(nsnull, 1, nsnull, 0, temp, sizeof(temp));
+    string xpcomPath(XULPath);
     cout << "xpcom: " << xpcomPath << endl;
 
-    if (NS_FAILED(rv)) {
-        cerr << "Unable to find GRE, try setting GRE_HOME." << endl;
-        //return 1;
-	xpcomPath = aEmbedPath;
-    }
 
     // start the glue, i.e. load and link against xpcom shared lib
-    rv = XPCOMGlueStartup(xpcomPath.c_str());
+    rv = XPCOMGlueStartup(XULPath);
+
     if (NS_FAILED(rv)) {
         cerr << "Could not start XPCOM glue." << endl;
-        return 2;
+        return NS_ERROR_FAILURE;
     }
 
     // get rid of the bogus TLS warnings
@@ -199,25 +196,28 @@ nsresult InitEmbedding(const char* aProfilePath, const char* aEmbedPath)
     rv = XPCOMGlueLoadXULFunctions(nsFuncs);
     if (NS_FAILED(rv)) {
         cerr << "Could not load XUL functions." << endl;
-        return 4;
+        //return 4;
+        return rv;
     }
 
     // strip the filename from xpcom so we have the dir instead
     size_t lastslash = xpcomPath.find_last_of("/\\");
     if (lastslash == string::npos) {
         cerr << "Invalid path to xpcom:" << xpcomPath << "." << endl;
-        return 3;
+        //return 3;
+        return rv;//FIXME set right return value
     }
     string xpcomDir = xpcomPath.substr(0, lastslash);
 
     // create nsILocalFile pointing to xpcomDir
-    nsCOMPtr<nsILocalFile> xuldir;
-    rv = NS_NewNativeLocalFile(nsCString(xpcomDir.c_str()), PR_FALSE,
-                               getter_AddRefs(xuldir));
+    nsCOMPtr<nsIFile> xuldir;
+    rv = NS_NewNativeLocalFile(nsCString(xpcomDir.c_str()), false,
+                                   getter_AddRefs(xuldir));
     if (NS_FAILED(rv)) {
         cerr << "Unable to create nsILocalFile for xuldir " << xpcomDir
              << "." << endl;
-        return 6;
+        //return 6;
+        return rv;
     }
 
     // create nsILocalFile pointing to appdir
@@ -234,38 +234,40 @@ nsresult InitEmbedding(const char* aProfilePath, const char* aEmbedPath)
     lastslash = selfPath.find_last_of("/\\");
     if (lastslash == string::npos) {
         cerr << "Invalid module filename: " << self << "." << endl;
-        return 7;
+        //return 7;
+        return rv;
     }
 
     selfPath = selfPath.substr(0, lastslash);
 
-    nsCOMPtr<nsILocalFile> appdir;
-    rv = NS_NewNativeLocalFile(nsCString(selfPath.c_str()), PR_FALSE,
+    nsCOMPtr<nsIFile> appdir;
+    rv = NS_NewNativeLocalFile(nsCString(selfPath.c_str()), false,
                                getter_AddRefs(appdir));
     if (NS_FAILED(rv)) {
         cerr << "Unable to create nsILocalFile for appdir." << endl;
-        return 8;
+        //return 8;
+        return rv;
     }
 
     // setup profile dir
     nsCString pr(aProfilePath);
     if (!pr.IsEmpty()) {
-        rv = NS_NewNativeLocalFile(pr, PR_FALSE,
+        rv = NS_NewNativeLocalFile(pr, false,
                                    getter_AddRefs(sProfileDir));
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_FAILED(rv)) return rv;
     } else {
         // for now use a subdir under appdir
         nsCOMPtr<nsIFile> profFile;
         rv = appdir->Clone(getter_AddRefs(profFile));
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_FAILED(rv)) return rv;
         sProfileDir = do_QueryInterface(profFile);
         sProfileDir->AppendNative(NS_LITERAL_CSTRING("mozembed"));
     }
 
     // create dir if needed
-    PRBool dirExists;
+    bool dirExists;
     rv = sProfileDir->Exists(&dirExists);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
     if (!dirExists) {
         sProfileDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
     }
@@ -273,15 +275,17 @@ nsresult InitEmbedding(const char* aProfilePath, const char* aEmbedPath)
     // Lock profile directory
     if (sProfileDir && !sProfileLock) {
         rv = XRE_LockProfileDirectory(sProfileDir, &sProfileLock);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_FAILED(rv)) return rv;
     }
 
     // init embedding
-    rv = XRE_InitEmbedding2(xuldir, appdir,
-                           const_cast<MozEmbedDirectoryProvider*>(&kDirectoryProvider));
+    //rv = XRE_InitEmbedding2(xuldir, appdir, nsnull);
+    rv = XRE_InitEmbedding2(xuldir, appdir, NULL);
+                           //const_cast<MozEmbedDirectoryProvider*>(&kDirectoryProvider));
     if (NS_FAILED(rv)) {
         cerr << "XRE_InitEmbedding2 failed." << endl;
-        return 9;
+        //return 9;
+        return rv;
     }
 
     // initialize profile:
@@ -316,11 +320,11 @@ nsresult TermEmbedding()
     sProfileDir = 0;
 
     // shutdown xpcom
-    rv = XPCOMGlueShutdown();
+    /*rv = XPCOMGlueShutdown(); //FIXME 
     if (NS_FAILED(rv)) {
         cerr << "Could not shutdown XPCOM glue." << endl;
         return rv;
-    }
+    }*/
 
     NS_LogTerm();
 

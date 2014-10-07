@@ -59,21 +59,26 @@ ContentListener::~ContentListener()
 {
 }
 
-NS_IMPL_ISUPPORTS2(ContentListener,
+NS_IMPL_ISUPPORTS(ContentListener,
                    nsIURIContentListener,
                    nsISupportsWeakReference)
 
 NS_IMETHODIMP
-ContentListener::OnStartURIOpen(nsIURI *aURI, PRBool *aAbortOpen)
+ContentListener::OnStartURIOpen(nsIURI *aURI, bool *aAbortOpen)
 {
     nsresult rv;
-    nsCAutoString specString;
+    nsCString specString;
     rv = aURI->GetSpec(specString);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) return rv;
 
     MozViewListener *listener = mOwner->GetListener ();
     if (listener)
-        *aAbortOpen = listener->OpenURI(specString.get());
+    {
+    	const char* data;
+    	uint32_t dataLen = NS_CStringGetData(specString, &data);
+
+        *aAbortOpen = listener->OpenURI(data);
+    }
     else
         *aAbortOpen = false;
 
@@ -82,10 +87,10 @@ ContentListener::OnStartURIOpen(nsIURI *aURI, PRBool *aAbortOpen)
 
 NS_IMETHODIMP
 ContentListener::DoContent(const char * /*aContentType*/,
-                           PRBool /*aIsContentPreferred*/,
+                           bool /*aIsContentPreferred*/,
                            nsIRequest * /*aRequest*/,
                            nsIStreamListener ** /*aContentHandler*/,
-                           PRBool * /*aAbortProcess*/)
+                           bool * /*aAbortProcess*/)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -93,7 +98,7 @@ ContentListener::DoContent(const char * /*aContentType*/,
 NS_IMETHODIMP
 ContentListener::IsPreferred(const char * aContentType,
                              char ** aDesiredContentType,
-                             PRBool * aCanHandleContent)
+                             bool * aCanHandleContent)
 {
     return CanHandleContent(aContentType, PR_TRUE, aDesiredContentType,
                             aCanHandleContent);
@@ -101,12 +106,12 @@ ContentListener::IsPreferred(const char * aContentType,
 
 NS_IMETHODIMP
 ContentListener::CanHandleContent(const char * aContentType,
-                                  PRBool /*aIsContentPreferred*/,
+                                  bool /*aIsContentPreferred*/,
                                   char ** aDesiredContentType,
-                                  PRBool * _retval)
+                                  bool * _retval)
 {
     *_retval = PR_FALSE;
-    *aDesiredContentType = nsnull;
+    *aDesiredContentType = NULL;
 
     if (!aContentType)
         return NS_ERROR_FAILURE;
@@ -116,10 +121,15 @@ ContentListener::CanHandleContent(const char * aContentType,
         return NS_ERROR_FAILURE;
 
     PRUint32 canHandle;
-    nsresult rv = webNavInfo->IsTypeSupported(nsDependentCString(aContentType),
-                                    mNavigation ? mNavigation.get() : nsnull,
-                                    &canHandle);
-    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsCString aContStr;
+    aContStr.Assign(NS_LITERAL_CSTRING(aContentType));
+
+    //nsresult rv = webNavInfo->IsTypeSupported(nsACString(aContentType),
+    nsresult rv = webNavInfo->IsTypeSupported(aContStr,
+                                        mNavigation ? mNavigation.get() : NULL,
+                                        &canHandle);
+    if (NS_FAILED(rv)) return rv;
 
     *_retval = (canHandle != nsIWebNavigationInfo::UNSUPPORTED);
     return NS_OK;
