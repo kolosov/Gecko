@@ -266,7 +266,9 @@ WindowCreator::CreateChromeWindow2(nsIWebBrowserChrome *aParent,
 								uint32_t aChromeFlags,
 								uint32_t /*aContextFlags*/,
                                 nsIURI * /*aUri*/,
+#if MOZILLA_VERSION_1 > 31
                                 nsITabParent *aOpeningTab,
+#endif
                                 bool * /*aCancel*/,
                                 nsIWebBrowserChrome **_retval)
 {
