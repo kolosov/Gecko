@@ -5,8 +5,8 @@ This is clone of https://github.com/gistinc/Gecko, code is based on http://hg.mo
 
 Improvenments
 ------------
-  CMake support
-  Support latest Firefox ESR 31
+    CMake support
+    Support of latest Firefox ESR 31
 
 Compiling
 ---------
