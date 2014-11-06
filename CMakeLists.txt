@@ -56,6 +56,6 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
 endif()
 
 add_subdirectory (common)
-add_subdirectory (srvlistener)
+add_subdirectory (listener)
 add_subdirectory (gtkskel)
 
