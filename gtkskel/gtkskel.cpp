@@ -10,7 +10,7 @@ GtkWidget *g_entry;
 GtkWidget *g_statusbar;
 GtkWidget *g_viewport;
 MozView *myMozView;
-SrvListener *myMozListener;
+SampleListener *myMozListener;
 
 int main( int   argc,
           char *argv[] )
@@ -58,7 +58,7 @@ int main( int   argc,
 
     int res = myMozView->CreateBrowser(g_viewport, 0, 0, 1024-50, 600-50, 0);
 
-    myMozListener = new SrvListener(myMozView);
+    myMozListener = new SampleListener(myMozView);
 
     myMozView->SetListener(myMozListener);
 

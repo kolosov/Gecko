@@ -6,17 +6,17 @@
 #include <string>
 #include <iomanip>
 
-SrvListener::SrvListener(MozView *aMozView)
+SampleListener::SampleListener(MozView *aMozView)
 {
     mMozView=aMozView;
 }
 
-void SrvListener::StatusChanged(const char* newStatus, PRUint32 statusType)
+void SampleListener::StatusChanged(const char* newStatus, PRUint32 statusType)
 {
 	std::cout << "Status changed to " << string(newStatus) << std::endl;
 }
 
-void SrvListener::DocumentLoaded(bool aSuccess)
+void SampleListener::DocumentLoaded(bool aSuccess)
 {
 	if(aSuccess ) {
 		std::cout << "Document Loaded successful" << std::endl;
