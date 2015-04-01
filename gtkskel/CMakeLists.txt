@@ -1,6 +1,8 @@
 find_library(gecko_libs xpcomglue PATHS ${GECKO_SDK_PATH}/lib)
-find_library(gecko_libs_mozglue mozglue PATHS ${GECKO_SDK_PATH}/lib)
-find_library(gecko_libs_memory memory PATHS ${GECKO_SDK_PATH}/lib)
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  find_library(gecko_libs_mozglue mozglue PATHS ${GECKO_SDK_PATH}/lib)
+  find_library(gecko_libs_memory memory PATHS ${GECKO_SDK_PATH}/lib)
+endif()
 
 find_package(GTK2 2.6 REQUIRED gtk)
 
@@ -15,5 +17,10 @@ set(gtkskel_src gtkskel.cpp)
 add_definitions(-fno-rtti )
 add_executable(gtkskel ${gtkskel_src})
 
-target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${GTK2_LIBRARIES} dl -Wl,--whole-archive ${gecko_libs_mozglue} -Wl,--no-whole-archive ${gecko_libs_memory} pthread )
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${GTK2_LIBRARIES} dl -Wl,--whole-archive ${gecko_libs_mozglue} -Wl,--no-whole-archive ${gecko_libs_memory} pthread )
+endif()
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${GTK2_LIBRARIES} )
+endif()
 

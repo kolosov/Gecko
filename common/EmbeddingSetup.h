@@ -45,7 +45,12 @@
 #include "prtypes.h"
 #include "geckoembed_config.h"
 
-#define defXULPath  GECKO_SDK_PATH_CONFIG "/bin/libxpcom.so"
+
+#if defined(WIN32)
+  #define defXULPath  GECKO_SDK_PATH_CONFIG "\\bin\\xpcom.dll"
+#else
+  #define defXULPath  GECKO_SDK_PATH_CONFIG "/bin/libxpcom.so"
+#endif
 
 //typedef PRUint32 nsresult;
 

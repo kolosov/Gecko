@@ -37,6 +37,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#if defined(WIN32)
+#include "mozilla/Char16.h"
+#endif
+
 
 #include "EmbeddingSetup.h"
 #include "embed.h"
@@ -214,8 +218,7 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
     rv = NS_NewNativeLocalFile(nsCString(xpcomDir.c_str()), false,
                                    getter_AddRefs(xuldir));
     if (NS_FAILED(rv)) {
-        cerr << "Unable to create nsILocalFile for xuldir " << xpcomDir
-             << "." << endl;
+        cerr << "Unable to create nsILocalFile for xuldir " << xpcomDir << endl;
         //return 6;
         return rv;
     }

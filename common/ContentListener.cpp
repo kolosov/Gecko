@@ -34,6 +34,9 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#if defined(WIN32)
+#include "mozilla/Char16.h"
+#endif
 
 #include "ContentListener.h"
 #include "embed.h"
