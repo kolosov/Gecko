@@ -51,10 +51,12 @@ class ContentListener : public nsIURIContentListener,
 public:
 
     ContentListener(MozView *aOwner, nsIWebNavigation *aNavigation);
-    virtual ~ContentListener();
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIURICONTENTLISTENER
+
+protected:
+    virtual ~ContentListener();
 
 private:
     MozView *mOwner;

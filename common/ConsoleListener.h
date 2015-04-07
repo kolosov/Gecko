@@ -48,12 +48,13 @@ class ConsoleListener : public nsIConsoleListener
 public:
 
     ConsoleListener(MozView *aOwner);
-    virtual ~ConsoleListener();
 
     void Detach();
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSICONSOLELISTENER
+protected:
+    virtual ~ConsoleListener();
 
 private:
     MozView * mOwner;

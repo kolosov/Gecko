@@ -229,13 +229,14 @@ public:
     {
     }
 
-    virtual ~WindowCreator()
-    {
-    }
-
     NS_DECL_ISUPPORTS
     NS_DECL_NSIWINDOWCREATOR
     NS_DECL_NSIWINDOWCREATOR2
+
+protected:
+    virtual ~WindowCreator()
+    {
+    }
 };
 
 NS_IMPL_ISUPPORTS(WindowCreator, nsIWindowCreator, nsIWindowCreator2)

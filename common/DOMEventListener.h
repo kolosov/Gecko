@@ -43,13 +43,15 @@ class DOMEventListener : public nsIDOMEventListener
 {
 public:
     DOMEventListener(MozView *aOwner);
-    virtual ~DOMEventListener();
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIDOMEVENTLISTENER
 
 private:
     MozView *mOwner;
+
+protected:
+    virtual ~DOMEventListener();
 };
 
 #endif /* Header guard */

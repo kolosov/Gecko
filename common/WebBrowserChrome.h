@@ -67,10 +67,10 @@ public:
 
     WebBrowserChrome(MozView* pAMozView);
 
-    virtual ~WebBrowserChrome();
     MozView* GetMozView() {return pMozView;}
 
 protected:
+    virtual ~WebBrowserChrome();
     /* additional members */
     nsCOMPtr<nsIWebBrowser> mWebBrowser;
     PRUint32 mChromeFlags;
