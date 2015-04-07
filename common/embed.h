@@ -44,6 +44,7 @@
 
 #include "geckoembed_config.h"
 
+#include "mozilla/mozalloc.h"
 #include "prtypes.h"
 #include "nsError.h"
 
