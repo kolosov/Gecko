@@ -5,6 +5,11 @@ if(CMAKE_SYSTEM_NAME MATCHES Linux)
   find_library(xulrunner_mozalloc mozalloc PATHS ${GECKO_SDK_PATH}/lib)
 endif()
 
+if(CMAKE_SYSTEM_NAME MATCHES Windows)
+  find_library(xulrunner_mozalloc mozalloc PATHS ${GECKO_SDK_PATH}/lib)
+endif()
+
+
 find_package(GTK2 2.6 REQUIRED gtk)
 
 include_directories ("${PROJECT_SOURCE_DIR}/common")
@@ -22,6 +27,6 @@ if(CMAKE_SYSTEM_NAME MATCHES Linux)
   target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${GTK2_LIBRARIES} dl -Wl,--whole-archive ${gecko_libs_mozglue} -Wl,--no-whole-archive ${gecko_libs_memory} pthread ${xulrunner_mozalloc} )
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
-  target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${GTK2_LIBRARIES} )
+  target_link_libraries(gtkskel listener geckoembed ${gecko_libs} ${xulrunner_mozalloc} ${GTK2_LIBRARIES} )
 endif()
 
