@@ -46,32 +46,32 @@ public:
     virtual void SetTitle(const char *new_title) {
         update_property (mView, PROP_TITLE, new_title);
         g_signal_emit (mView, signals[TITLE_CHANGED],
-                       NULL, new_title);
+                       0, new_title);
     }
 
     virtual void StatusChanged(const char *new_status, PRUint32 flags) {
         update_property (mView, PROP_STATUS, new_status);
         g_signal_emit (mView, signals[STATUS_CHANGED],
-                       NULL, new_status);
+                       0, new_status);
     }
 
     virtual void LocationChanged(const char *new_uri) {
         update_property (mView, PROP_LOCATION, new_uri);
         g_signal_emit (mView, signals[LOCATION_CHANGED],
-                       NULL, new_uri);
+                       0, new_uri);
     }
 
-    virtual PRBool OpenURI(const char* new_uri) {
+    virtual bool OpenURI(const char* new_uri) {
         gboolean   abort_load = FALSE;
         update_property (mView, PROP_REQUESTED_URI, new_uri);
         g_signal_emit (mView, signals[URI_REQUESTED],
-                       NULL, new_uri, &abort_load);
+                       0, new_uri, &abort_load);
 
         return abort_load;
     }
 
     virtual void DocumentLoaded() {
-        g_signal_emit (mView, signals[DOCUMENT_LOADED], NULL);
+        g_signal_emit (mView, signals[DOCUMENT_LOADED], 0);
     }
 
     private:
