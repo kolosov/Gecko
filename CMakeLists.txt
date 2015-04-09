@@ -59,3 +59,6 @@ add_subdirectory (common)
 add_subdirectory (listener)
 add_subdirectory (gtkskel)
 
+add_subdirectory (gtk/common)
+add_subdirectory (gtk/x11)
+add_subdirectory (gtk/tests)
