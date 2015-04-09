@@ -368,7 +368,7 @@ public:
      * @return return value from JavaScript as a string in utf-8
      *  <b>NOTE:</b> this buffer must be freed by he caller using delete[]
      */
-    char* EvaluateJavaScript(const char* aScript);
+    /*char* EvaluateJavaScript(const char* aScript);*/
 
 private:
     class Private;

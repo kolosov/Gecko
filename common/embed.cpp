@@ -71,8 +71,11 @@ using namespace std;
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
 
+#include "nsIScriptContext.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIScriptObjectPrincipal.h"
+//#include "nsJSUtils.h"
+
 #include "nsIURI.h"
 #include "nsIWeakReference.h"
 #include "nsIWeakReferenceUtils.h"
@@ -585,6 +588,7 @@ bool MozView::FindText(const char * aSubString,
 /*
 char* MozView::EvaluateJavaScript(const char* aScript)
 {
+	cout << "EvaluateJS: " << aScript << endl;
     nsCOMPtr<nsIScriptGlobalObject> sgo =
         do_GetInterface(mPrivate->mWebBrowser);
     nsCOMPtr<nsIScriptContext> ctx = sgo->GetContext();
@@ -592,16 +596,16 @@ char* MozView::EvaluateJavaScript(const char* aScript)
     nsCOMPtr<nsIScriptObjectPrincipal> sgoPrincipal = do_QueryInterface(sgo);
     ctx->EvaluateString(NS_ConvertUTF8toUTF16(aScript), sgo->GetGlobalJSObject(),
                         sgoPrincipal->GetPrincipal(),
-                        "mozembed", 0, nsnull, &retval, nsnull);
+                        "mozembed", 0, nullptr, &retval, nullptr);
 
     NS_ConvertUTF16toUTF8 retvalUtf8(retval);
     char* temp = new char[retvalUtf8.Length() + 1];
     strncpy(temp, retvalUtf8.get(), retvalUtf8.Length());
     temp[retvalUtf8.Length()] = 0;
-
     return temp;
 }
 */
+
 // ---- MozViewListener ---
 MozViewListener::MozViewListener() : mMozView(0)
 {
