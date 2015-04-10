@@ -6,6 +6,9 @@ include_directories(${GECKO_SDK_PATH}/include ${GECKO_SDK_PATH}/include/nspr)
 
 set(listener_src listener.cpp)
 
-add_definitions(-fshort-wchar -fno-rtti)
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  add_definitions(-fshort-wchar -fno-rtti)
+endif()
+
 add_library(listener STATIC ${listener_src})
 

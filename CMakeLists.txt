@@ -42,8 +42,6 @@ configure_file (
   "${PROJECT_BINARY_DIR}/geckoembed_config.h"
   )
 
-
-
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("/usr/include/nspr")
 
@@ -60,5 +58,10 @@ add_subdirectory (listener)
 add_subdirectory (gtkskel)
 
 add_subdirectory (gtk/common)
-add_subdirectory (gtk/x11)
+if (CMAKE_SYSTEM_NAME MATCHES Linux)
+ add_subdirectory (gtk/x11)
+endif()
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+ add_subdirectory (gtk/win32)
+endif()
 add_subdirectory (gtk/tests)

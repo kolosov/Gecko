@@ -155,7 +155,7 @@ public:
                        NULL, new_uri);
     }
 
-    virtual PRBool OpenURI(const char* new_uri) {
+    virtual bool OpenURI(const char* new_uri) {
         gboolean   abort_load = FALSE;
         update_property (mView, PROP_REQUESTED_URI, new_uri);
         g_signal_emit (mView, signals[URI_REQUESTED],
