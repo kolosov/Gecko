@@ -74,6 +74,10 @@ using namespace std;
 #  define MAX_PATH PATH_MAX
 #endif
 
+#if defined(__APPLE__)
+#include <libproc.h>
+#endif
+
 XRE_InitEmbedding2Type XRE_InitEmbedding2 = 0;
 XRE_TermEmbeddingType XRE_TermEmbedding = 0;
 XRE_NotifyProfileType XRE_NotifyProfile = 0;
@@ -203,7 +207,9 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
         //return 4;
         return rv;
     }
+    // Basic initialization done
 
+  /*
     // strip the filename from xpcom so we have the dir instead
     size_t lastslash = xpcomPath.find_last_of("/\\");
     if (lastslash == string::npos) {
@@ -217,6 +223,7 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
     nsCOMPtr<nsIFile> xuldir;
     rv = NS_NewNativeLocalFile(nsCString(xpcomDir.c_str()), false,
                                    getter_AddRefs(xuldir));
+    cout << "xuldir: " << xpcomDir << endl;
     if (NS_FAILED(rv)) {
         cerr << "Unable to create nsILocalFile for xuldir " << xpcomDir << endl;
         //return 6;
@@ -240,6 +247,8 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
         //return 7;
         return rv;
     }
+
+    cout << "Module filename: " << self << " : " << selfPath << endl;
 
     selfPath = selfPath.substr(0, lastslash);
 
@@ -280,8 +289,62 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
         rv = XRE_LockProfileDirectory(sProfileDir, &sProfileLock);
         if (NS_FAILED(rv)) return rv;
     }
-
+*/
     // init embedding
+    // create nsILocalFile pointing to xpcomDir
+    nsCOMPtr<nsIFile> xuldir;
+    rv = NS_NewNativeLocalFile(nsCString(defXULPathDir), false,
+                                       getter_AddRefs(xuldir));
+    if (NS_FAILED(rv)) {
+                cerr << "Unable to create nsILocalFile for xuldir." << endl;
+                return rv;
+    }
+    cout << "xuldir: " << defXULPathDir << endl;
+
+    // check current exe path for profile creation
+    // TODO use an other way to find profile path
+
+    size_t lastslash;
+    char self[MAX_PATH];
+	#if defined(_WIN32)
+    	GetModuleFileNameA(GetModuleHandle(NULL), self, sizeof(self));
+	#elif defined(__linux__)
+    	ssize_t len;
+    	if ((len = readlink("/proc/self/exe", self, sizeof(self)-1)) != -1)
+    		self[len] = '\0';
+	#elif defined(__APPLE__)
+    	/*if (_NSGetExecutablePath(path, &size) == 0)
+    		printf("executable path is %s\n", path);
+    	else
+    		    printf("buffer too small; need size %u\n", size);
+    	 */
+    	pid_t pid; int ret;
+
+		pid = getpid();
+		ret = proc_pidpath (pid, self, sizeof(self));
+		if ( ret <= 0 ) {
+			cerr << "PID " << pid << ": proc_pidpath ();" << endl;
+			cerr << "proc: " << strerror(errno)  << endl;
+		}
+	#else
+		#error "Unsupported platform!"
+	#endif
+    string selfPath(self);
+    lastslash = selfPath.find_last_of("/\\");
+    if (lastslash == string::npos) {
+        cerr << "Invalid module filename: " << self << "." << endl;
+        //return 7;
+        return rv;
+    }
+
+    nsCOMPtr<nsIFile> appdir;
+	rv = NS_NewNativeLocalFile(nsCString(selfPath.c_str()), false,
+							   getter_AddRefs(appdir));
+	if (NS_FAILED(rv)) {
+		cerr << "Unable to create nsILocalFile for appdir." << endl;
+		return rv;
+	}
+
     //rv = XRE_InitEmbedding2(xuldir, appdir, nsnull);
     rv = XRE_InitEmbedding2(xuldir, appdir, NULL);
                            //const_cast<MozEmbedDirectoryProvider*>(&kDirectoryProvider));

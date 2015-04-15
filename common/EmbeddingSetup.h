@@ -45,13 +45,17 @@
 #include "prtypes.h"
 #include "geckoembed_config.h"
 
-
 #if defined(_WIN32)
-  #define defXULPath  GECKO_SDK_PATH_CONFIG "\\bin\\xpcom.dll"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin\\"
+	#define defXULPathFile defXULPathDir "xpcom.dll"
 #elif defined(__linux__)
-  #define defXULPath  GECKO_SDK_PATH_CONFIG "bin/libxpcom.so"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin/"
+	#define defXULPathFile defXULPathDir "libxpcom.so"
 #elif defined(__APPLE__)
-  #define defXULPath  GECKO_SDK_PATH_CONFIG "bin/XUL.framework/Versions/Current/XUL"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin/XUL.framework/Versions/Current/"
+	#define defXULPathFile defXULPathDir "XUL"
+#else
+	#error "Unsupported platform!"
 #endif
 
 //typedef PRUint32 nsresult;
@@ -69,7 +73,7 @@
  * @param aEmbedPath Optional path to the actual xulrunner code,
  *  to use a specific version rather than any registered version.
  */
-nsresult InitEmbedding(const char* aProfilePath = 0, const char* XULPath = defXULPath);
+nsresult InitEmbedding(const char* aProfilePath = 0, const char* XULPath = defXULPathFile);
 
 /**
  * Terminates embedding, i.e. does teardown and unloads needed libs.
