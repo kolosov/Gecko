@@ -77,7 +77,7 @@ using namespace std;
 //#include "nsJSUtils.h"
 
 #include "nsIURI.h"
-#include "nsIWeakReference.h"
+#include "nsEmbedWeakReference.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsIWebBrowser.h"
 #include "nsIWebBrowserFocus.h"
