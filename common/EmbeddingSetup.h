@@ -46,13 +46,13 @@
 #include "geckoembed_config.h"
 
 #if defined(_WIN32)
-	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin\\"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "\\bin\\"
 	#define defXULPathFile defXULPathDir "xpcom.dll"
 #elif defined(__linux__)
-	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin/"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "/bin/"
 	#define defXULPathFile defXULPathDir "libxpcom.so"
 #elif defined(__APPLE__)
-	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "bin/XUL.framework/Versions/Current/"
+	#define defXULPathDir  GECKO_SDK_PATH_CONFIG "/bin/XUL.framework/Versions/Current/"
 	#define defXULPathFile defXULPathDir "XUL"
 #else
 	#error "Unsupported platform!"

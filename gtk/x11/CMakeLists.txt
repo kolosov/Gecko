@@ -12,6 +12,6 @@ include_directories(${GECKO_SDK_PATH}/include ${GECKO_SDK_PATH}/include/nspr)
 #set(gtkembedlib_src moz-web-view-marshal.c moz-web-view-common.cpp moz-web-view.cpp)
 set(gtkembedlib_src moz-web-view.cpp)
 
-add_definitions(-fshort-wchar -fno-rtti)
+add_definitions(-fshort-wchar -fno-rtti -std=c++11)
 add_library(gtkembedlib STATIC ${gtkembedlib_src})
 
