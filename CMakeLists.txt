@@ -46,11 +46,18 @@ include_directories("${PROJECT_BINARY_DIR}")
 include_directories("/usr/include/nspr")
 
 if (CMAKE_SYSTEM_NAME MATCHES Linux)
+ message("Linux build")
  add_definitions(-g -std=c++11  -DXPCOM_GLUE_USE_NSPR -DXPCOM_GLUE=1)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows)
+ message("Windows build")
  add_definitions( -DXPCOM_GLUE_USE_NSPR -DXPCOM_GLUE=1 -DXP_WIN=1 -D_ITERATOR_DEBUG_LEVEL=0)
+endif()
+
+if (CMAKE_SYSTEM_NAME MATCHES Darwin)
+ message("Darwin build")
+ add_definitions(-g -std=c++11  -DXPCOM_GLUE_USE_NSPR -DXPCOM_GLUE=1)
 endif()
 
 add_subdirectory (common)
@@ -59,6 +66,9 @@ add_subdirectory (gtkskel)
 
 add_subdirectory (gtk/common)
 if (CMAKE_SYSTEM_NAME MATCHES Linux)
+ add_subdirectory (gtk/x11)
+endif()
+if (CMAKE_SYSTEM_NAME MATCHES Darwin)
  add_subdirectory (gtk/x11)
 endif()
 if (CMAKE_SYSTEM_NAME MATCHES Windows)
