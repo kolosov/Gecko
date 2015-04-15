@@ -46,10 +46,12 @@
 #include "geckoembed_config.h"
 
 
-#if defined(WIN32)
+#if defined(_WIN32)
   #define defXULPath  GECKO_SDK_PATH_CONFIG "\\bin\\xpcom.dll"
-#else
-  #define defXULPath  GECKO_SDK_PATH_CONFIG "/bin/libxpcom.so"
+#elif defined(__linux__)
+  #define defXULPath  GECKO_SDK_PATH_CONFIG "bin/libxpcom.so"
+#elif defined(__APPLE__)
+  #define defXULPath  GECKO_SDK_PATH_CONFIG "bin/XUL.framework/Versions/Current/XUL"
 #endif
 
 //typedef PRUint32 nsresult;
