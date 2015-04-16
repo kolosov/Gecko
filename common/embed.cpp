@@ -77,8 +77,12 @@ using namespace std;
 //#include "nsJSUtils.h"
 
 #include "nsIURI.h"
+#if MOZILLA_VERSION_1 < 33
 #include "nsEmbedWeakReference.h"
+#else
+#include "nsWeakReference.h"
 #include "nsIWeakReferenceUtils.h"
+#endif
 #include "nsIWebBrowser.h"
 #include "nsIWebBrowserFocus.h"
 #include "nsIWebBrowserStream.h"

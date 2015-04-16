@@ -11,6 +11,8 @@
 #include "nsEmbedWeakReference.h"
 #include "nsCOMPtr.h"
 
+#include "geckoembed_config.h"
+
 class nsWeakReference MOZ_FINAL : public nsIWeakReference
   {
     public:
@@ -19,6 +21,9 @@ class nsWeakReference MOZ_FINAL : public nsIWeakReference
 
     // nsIWeakReference...
       NS_DECL_NSIWEAKREFERENCE
+#if MOZILLA_VERSION_1 > 32
+	  virtual size_t SizeOfOnlyThis(mozilla::MallocSizeOf aMallocSizeOf) const MOZ_OVERRIDE;
+#endif
 
     private:
       friend class nsSupportsWeakReference;

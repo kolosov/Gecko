@@ -37,8 +37,14 @@
 #ifndef MOZEMBED_CONSOLELISTENER_H
 #define MOZEMBED_CONSOLELISTENER_H
 
+#include "geckoembed_config.h"
+
 #include "nsIConsoleListener.h"
+#if MOZILLA_VERSION_1 < 33
 #include "nsEmbedWeakReference.h"
+#else
+#include "nsWeakReference.h"
+#endif
 #include "nsIConsoleMessage.h"
 
 class MozView;

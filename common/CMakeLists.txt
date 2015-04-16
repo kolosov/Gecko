@@ -8,6 +8,9 @@ endif()
 
 include_directories(${GECKO_SDK_PATH}/include ${GECKO_SDK_PATH}/include/nspr)
 
-set(geckoembedlib_src ConsoleListener.cpp ContentListener.cpp DOMEventListener.cpp EmbeddingSetup.cpp WebBrowserChrome.cpp embed.cpp nsEmbedWeakReference.cpp)
+set(geckoembedlib_src ConsoleListener.cpp ContentListener.cpp DOMEventListener.cpp EmbeddingSetup.cpp WebBrowserChrome.cpp embed.cpp )
+if(MOZILLA_VERSION_1 VERSION_LESS "33")
+  set (geckoembedlib_src ${geckoembedlib_src} nsEmbedWeakReference.cpp)
+endif()
 
 add_library(geckoembed STATIC ${geckoembedlib_src})

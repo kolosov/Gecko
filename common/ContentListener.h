@@ -38,9 +38,13 @@
 #ifndef MOZEMBED_CONTENTLISTENER_H
 #define MOZEMBED_CONTENTLISTENER_H
 
+#include "geckoembed_config.h"
 #include "nsIURIContentListener.h"
-
+#if MOZILLA_VERSION_1 < 33
 #include "nsEmbedWeakReference.h"
+#else
+#include "nsWeakReference.h"
+#endif
 #include "nsIWebNavigation.h"
 
 #include "embed.h"

@@ -39,6 +39,8 @@
 #ifndef MOZEMBED_WEBBROWSERCHROME_H
 #define MOZEMBED_WEBBROWSERCHROME_H
 
+#include "geckoembed_config.h"
+
 #include "nsCOMPtr.h"
 #include "nsIWebBrowser.h"
 #include "nsIWebBrowserChrome.h"
@@ -46,8 +48,11 @@
 #include "nsIWebProgressListener.h"
 #include "nsIEmbeddingSiteWindow.h"
 #include "nsIInterfaceRequestor.h"
+#if MOZILLA_VERSION_1 < 33
 #include "nsEmbedWeakReference.h"
-
+#else
+#include "nsWeakReference.h"
+#endif
 class MozView;
 
 class WebBrowserChrome : public nsIWebBrowserChrome,
