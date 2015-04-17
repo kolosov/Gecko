@@ -185,7 +185,7 @@ nsresult InitEmbedding(const char* aProfilePath, const char* XULPath)
     rv = XPCOMGlueStartup(XULPath);
 
     if (NS_FAILED(rv)) {
-        cerr << "Could not start XPCOM glue." << endl;
+        cerr << "Could not start XPCOM glue: " << to_string(static_cast<uint32_t>(rv)) << endl;
         return NS_ERROR_FAILURE;
     }
 
