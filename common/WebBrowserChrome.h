@@ -59,8 +59,7 @@ class WebBrowserChrome : public nsIWebBrowserChrome,
     public nsIWebProgressListener,
     public nsIWebBrowserChromeFocus,
     public nsIEmbeddingSiteWindow,
-    public nsIInterfaceRequestor,
-    public nsSupportsWeakReference
+    public nsIInterfaceRequestor
 {
 public:
     NS_DECL_ISUPPORTS

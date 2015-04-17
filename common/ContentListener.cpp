@@ -63,9 +63,7 @@ ContentListener::~ContentListener()
 }
 
 NS_IMPL_ISUPPORTS(ContentListener,
-                   nsIURIContentListener,
-                   nsISupportsWeakReference)
-
+                   nsIURIContentListener)
 NS_IMETHODIMP
 ContentListener::OnStartURIOpen(nsIURI *aURI, bool *aAbortOpen)
 {

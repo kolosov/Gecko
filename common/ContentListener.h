@@ -49,8 +49,7 @@
 
 #include "embed.h"
 
-class ContentListener : public nsIURIContentListener,
-                        public nsSupportsWeakReference
+class ContentListener : public nsIURIContentListener
 {
 public:
 
