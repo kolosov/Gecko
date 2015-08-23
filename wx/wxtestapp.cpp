@@ -77,8 +77,10 @@ public:
 	    #ifdef __WXGTK__
 	    //void* native_handle = (void*)m_wxwindow;
 	    void* native_handle = (void*)frame1;
+	    std::cout << "Using gtk frame for embedding" << std::endl;
 	    #else
 	    void* native_handle = (void*)frame1->GetHandle();
+	    std::cout << "Using native handler from frame for embedding" << std::endl;
 	    #endif
 
 		myMozView = new MozView();
@@ -103,6 +105,7 @@ public:
         SetTopWindow(frame1);
         frame1->Show();
 
+	myMozView->LoadURI("www.opennet.ru");
 	//m_browser->OpenURI("www.opennet.ru");
 
 /*

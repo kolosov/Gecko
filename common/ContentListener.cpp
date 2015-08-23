@@ -87,7 +87,12 @@ ContentListener::OnStartURIOpen(nsIURI *aURI, bool *aAbortOpen)
 }
 
 NS_IMETHODIMP
-ContentListener::DoContent(const char * /*aContentType*/,
+ContentListener::DoContent(
+#if MOZILLA_VERSION_1 < 39
+const char * /*aContentType*/,
+#else
+const nsACString& /*aContentType*/,
+#endif
                            bool /*aIsContentPreferred*/,
                            nsIRequest * /*aRequest*/,
                            nsIStreamListener ** /*aContentHandler*/,
